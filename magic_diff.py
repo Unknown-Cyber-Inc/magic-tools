@@ -130,6 +130,7 @@ def pick (args, i, other_labels=[]):
 
 if __name__ == "__main__":
     options, args = process_args()
+    threshold = 0.05
     other_columns = options.other_columns
     output_sep = ","
     bindiff = BinDiff(options.proxy_store)
