@@ -64,8 +64,7 @@ class MAGICProxy (object):
         try:
             return self.fetch_from_cache(filename)
         except:
-            print >>sys.stderr, "[%s]: Genomics not in cache" % binary_id; sys.stderr.flush()
-            print >>sys.stderr, "[%s]: Fetching genomics from MAGIC" % binary_id; sys.stderr.flush()
+            print >>sys.stderr, "[%s] Genomics not in cache; fetching from MAGIC" % binary_id; sys.stderr.flush()
             result = real_magic.get_binary_genomics (binary_id)
             self.update_cache (filename, result)
             return eval(str(result))
