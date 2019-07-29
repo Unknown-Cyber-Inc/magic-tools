@@ -18,7 +18,19 @@ def read_hashes_from_csv (filename, display_hash):
         with open(filename, 'r') as fp:
             reader = csv.DictReader(fp)
             for row in reader:
-                file_hashes[row[display_hash]] = row
+                try:
+                    # a row must have a sha1, its needed for MAGIC
+                    sha1  = row['sha1']
+                    if sha1 is None or sha1 is "": continue
+                    # a row must have a display_hash (which may be md5, sha256, etc.)
+                    dhash = row[display_hash]
+                    if dhash is None or dhash is "": continue
+                    file_hashes[dhash] = row
+                except:
+                      import traceback
+                      traceback.print_exc(file=sys.stderr)
+                      sys.exit(101)
+
     return file_hashes
 
 ProcSet = namedtuple("ProcSet", "sha1 procs_set procs_list proc_count")
