@@ -80,6 +80,7 @@ class BinDiff (object):
 default_listfile = None
 default_proxy_store = os.path.join(os.path.dirname(__file__), "data", "magic_cache", "genomics")
 default_display_hash = "sha1"
+default_other_columns = ""
 
 def process_args():
     from optparse import OptionParser
@@ -91,6 +92,8 @@ def process_args():
     parser.add_option("--display-hash", dest="display_hash", default=default_display_hash,
                       help="""Hash to be used for showing similarity values. Default is: '%s'.
 Works only with the list-file option. The display hash should be provided in the file.""" % default_display_hash)
+    parser.add_option("--other-columns", dest="other_columns", default=default_other_columns,
+                      help="Other columns to display for each hash (comma-separated). Default: '%s'" % default_other_columns)
 
     (options, args) = parser.parse_args()
 
@@ -104,6 +107,11 @@ Works only with the list-file option. The display hash should be provided in the
             if len (args) == 0:
                 print >> sys.stderr, "WARNING: List file in %s is empty" % options.listfile
                 sys.exit (302)
+
+    # split other columns to create a list; and strip white spaces
+    options.other_columns = options.other_columns.split(",")
+    options.other_columns = map(lambda x: x.strip(), options.other_columns)
+    options.other_columns = filter(lambda x: x != "", options.other_columns)
 
     return (options, args)
 
@@ -121,6 +129,7 @@ def pick (args, i):
 
 if __name__ == "__main__":
     options, args = process_args()
+    other_columns = options.other_columns
     bindiff = BinDiff(options.proxy_store)
     display_hash = options.display_hash
     if len(args) < 2:
