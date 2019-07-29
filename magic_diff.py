@@ -1,7 +1,9 @@
 import sys
 import os
 from collections import OrderedDict
+from collections import namedtuple
 import magic_proxy
+import csv
 
 def ensure_dir(path):
     try: 
@@ -10,17 +12,15 @@ def ensure_dir(path):
         if not os.path.isdir(path):
             raise
 
-def readHashes (filename):
+def read_hashes_from_csv (filename):
+    file_hashes = {}
     if os.path.exists(filename):
         with open(filename, 'r') as fp:
-            # should remove duplicate hashes
-            result =  list(OrderedDict.fromkeys(map(lambda x: x.strip('\n\t\r'),fp.readlines())))
-            # skip hashes, if requested
-            return result
+            reader = csv.DictReader(fp)
+            for row in reader:
+                file_hashes[row['sha1']] = row
+    return file_hashes
 
-    return []
-
-from collections import namedtuple
 ProcSet = namedtuple("ProcSet", "sha1 procs_set procs_list proc_count")
 
 class BinDiff (object):
@@ -67,6 +67,7 @@ class BinDiff (object):
 
 default_listfile = None
 default_proxy_store = os.path.join(os.path.dirname(__file__), "data", "magic_cache", "genomics")
+default_display_hash = "sha1"
 
 def process_args():
     from optparse import OptionParser
@@ -75,6 +76,9 @@ def process_args():
                       help="File with list of sha1s to diff. Default is: %s" % default_listfile)
     parser.add_option("--cache", dest="proxy_store", default=default_proxy_store,
                       help="Directory to cache data from querying MAGIC. Default is: %s" % default_proxy_store)
+    parser.add_option("--display-hash", dest="display_hash", default=default_display_hash,
+                      help="""Hash to be used for showing similarity values. Default is: '%s'.
+Works only with the list-file option. The display hash should be provided in the file.""" % default_display_hash)
 
     (options, args) = parser.parse_args()
 
@@ -84,21 +88,37 @@ def process_args():
             print  >>sys.stderr, "ERROR - No arguments provided and listfile %s does not exist" % options.listfile
             sys.exit (301)
         else:
-            args = readHashes (options.listfile)
+            args = read_hashes_from_csv (options.listfile)
             if len (args) == 0:
                 print >> sys.stderr, "WARNING: List file in %s is empty" % options.listfile
                 sys.exit (302)
 
-    return (options,args)
+    return (options, args)
+
+
+def pick (args, i, label='md5'):
+    elem_i = args[i]
+    if type(elem_i) == dict:
+      sha1 = elem_i['sha1']
+      label_hash = elem_i[label]
+      return sha1, label_hash
+    else:
+        # hashes provided in command line
+        # use the same hash as label
+        return elem_i, elem_i
 
 if __name__ == "__main__":
     options, args = process_args()
     bindiff = BinDiff(options.proxy_store)
+    display_hash = options.display_hash
     if len(args) < 2:
         print >>sys.stderr, "ERROR - Need at least two sha1s to compute similarity, provided %r" % (None if args==0 else args)
     else:
-        total_files = len(args)
+        hashes = args.keys() if type(args) == dict else range(len(args))
+        total_files = len(hashes)
         for i in range(total_files):
             for j in range(i+1, total_files):
-                sim = bindiff.pairwise_similarity(args[i], args[j])
-                print args[i], args[j], sim
+                sha1_i, label_i = pick (args, hashes[i], label=display_hash)
+                sha1_j, label_j = pick (args, hashes[j], label=display_hash)
+                sim = bindiff.pairwise_similarity(sha1_i, sha1_j)
+                print label_i, label_j, sim
