@@ -131,6 +131,7 @@ def pick (args, i, other_labels=[]):
 if __name__ == "__main__":
     options, args = process_args()
     other_columns = options.other_columns
+    output_sep = ","
     bindiff = BinDiff(options.proxy_store)
     display_hash = options.display_hash
     if len(args) < 2:
@@ -138,6 +139,11 @@ if __name__ == "__main__":
     else:
         hashes = args.keys() if type(args) == dict else range(len(args))
         total_files = len(hashes)
+
+        header = map(lambda x: x+"_1", [display_hash]+other_columns)
+        header += map(lambda x: x+"_2", [display_hash]+other_columns)
+        header += ["similarity"]
+        print output_sep.join(header)
         for i in range(total_files):
             for j in range(i+1, total_files):
                 try:
