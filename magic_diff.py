@@ -12,13 +12,13 @@ def ensure_dir(path):
         if not os.path.isdir(path):
             raise
 
-def read_hashes_from_csv (filename):
+def read_hashes_from_csv (filename, display_hash):
     file_hashes = {}
     if os.path.exists(filename):
         with open(filename, 'r') as fp:
             reader = csv.DictReader(fp)
             for row in reader:
-                file_hashes[row['sha1']] = row
+                file_hashes[row[display_hash]] = row
     return file_hashes
 
 ProcSet = namedtuple("ProcSet", "sha1 procs_set procs_list proc_count")
@@ -88,7 +88,7 @@ Works only with the list-file option. The display hash should be provided in the
             print  >>sys.stderr, "ERROR - No arguments provided and listfile %s does not exist" % options.listfile
             sys.exit (301)
         else:
-            args = read_hashes_from_csv (options.listfile)
+            args = read_hashes_from_csv (options.listfile, options.display_hash)
             if len (args) == 0:
                 print >> sys.stderr, "WARNING: List file in %s is empty" % options.listfile
                 sys.exit (302)
@@ -96,11 +96,11 @@ Works only with the list-file option. The display hash should be provided in the
     return (options, args)
 
 
-def pick (args, i, label='md5'):
+def pick (args, i):
     elem_i = args[i]
     if type(elem_i) == dict:
       sha1 = elem_i['sha1']
-      label_hash = elem_i[label]
+      label_hash = i
       return sha1, label_hash
     else:
         # hashes provided in command line
@@ -118,7 +118,7 @@ if __name__ == "__main__":
         total_files = len(hashes)
         for i in range(total_files):
             for j in range(i+1, total_files):
-                sha1_i, label_i = pick (args, hashes[i], label=display_hash)
-                sha1_j, label_j = pick (args, hashes[j], label=display_hash)
+                sha1_i, label_i = pick (args, hashes[i])
+                sha1_j, label_j = pick (args, hashes[j])
                 sim = bindiff.pairwise_similarity(sha1_i, sha1_j)
                 print label_i, label_j, sim
