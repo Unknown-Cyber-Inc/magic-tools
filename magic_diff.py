@@ -116,16 +116,17 @@ Works only with the list-file option. The display hash should be provided in the
     return (options, args)
 
 
-def pick (args, i):
+def pick (args, i, other_labels=[]):
     elem_i = args[i]
     if type(elem_i) == dict:
       sha1 = elem_i['sha1']
       label_hash = i
-      return sha1, label_hash
+      others = map(lambda x: elem_i.get(x, "x"), other_labels)
+      return sha1, label_hash, others
     else:
         # hashes provided in command line
         # use the same hash as label
-        return elem_i, elem_i
+        return elem_i, elem_i, []
 
 if __name__ == "__main__":
     options, args = process_args()
@@ -139,7 +140,14 @@ if __name__ == "__main__":
         total_files = len(hashes)
         for i in range(total_files):
             for j in range(i+1, total_files):
-                sha1_i, label_i = pick (args, hashes[i])
-                sha1_j, label_j = pick (args, hashes[j])
-                sim = bindiff.pairwise_similarity(sha1_i, sha1_j)
-                print label_i, label_j, sim
+                try:
+                    sha1_i, label_i, others_i = pick (args, hashes[i], other_columns)
+                    sha1_j, label_j, others_j = pick (args, hashes[j], other_columns)
+                    sim = bindiff.pairwise_similarity(sha1_i, sha1_j)
+                    if sim >= threshold:
+                        result_row = [label_i] + others_i + [label_j] + others_j + ["%0.2f" % sim]
+                        print output_sep.join(result_row)
+                except:
+                    print >>sys.stderr, "[%s] Error when matching with %s; ignoring" % (sha1_i, sha1_j); sys.stderr.flush()
+                    import traceback; traceback.print_exc(file=sys.stderr)
+                    sys.exit(101)
