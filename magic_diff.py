@@ -26,6 +26,7 @@ ProcSet = namedtuple("ProcSet", "sha1 procs_set procs_list proc_count")
 class BinDiff (object):
     def __init__ (self, proxy_store="magic_cache"):
         self.magic = magic_proxy.MAGICProxy (proxy_store)
+        self.proc_store = {}
 
     def jaccard_similarity (self, binprocs1, binprocs2):
         common = binprocs1 & binprocs2
@@ -36,6 +37,9 @@ class BinDiff (object):
         return sim
 
     def read_procs (self, sha1):
+        if sha1 in self.proc_store:
+            return self.proc_store[sha1]
+
         response = self.magic.get_binary_genomics (sha1)
         data = response.data
         proc_hashes  = []
@@ -51,14 +55,16 @@ class BinDiff (object):
         for proc in procedures:
             proc_hashes.append(proc['hard_hash'])
         result = set(proc_hashes)
-        return ProcSet(sha1, set(proc_hashes), proc_hashes, len(proc_hashes))
+        proc_set = ProcSet(sha1, set(proc_hashes), proc_hashes, len(proc_hashes))
+        self.proc_store[sha1] = proc_set
+        return proc_set
 
     def pairwise_similarity (self, sha1, sha2):
         procs1 = self.read_procs(sha1)
         procs2 = self.read_procs(sha2)
         sim = self.jaccard_similarity(procs1.procs_set, procs2.procs_set)
         return sim
-    
+
 default_listfile = None
 default_proxy_store = os.path.join(os.path.dirname(__file__), "data", "magic_cache", "genomics")
 
