@@ -56,12 +56,12 @@ class BinDiff (object):
         data = response.data
         proc_hashes  = []
         if data is None:
-            print >>sys.stderr, "ERROR - Missing data for %s" % sha1; sys.stderr.flush()
+            print >>sys.stderr, "[%s] ERROR - %s" % (sha1, response.message); sys.stderr.flush()
             return ProcSet(sha1, set(proc_hashes), proc_hashes, len(proc_hashes))
         try:
             procedures = data['procedures']
         except:
-            print >>sys.stderr, "ERROR - No procedures in %s (type: %s)" % (sha1, type(data)); sys.stderr.flush()
+            print >>sys.stderr, "[%s] ERROR - No procedures (type of 'data': %s)" % (sha1, type(data)); sys.stderr.flush()
             return ProcSet(sha1, set(proc_hashes), proc_hashes, len(proc_hashes))
 
         for proc in procedures:
