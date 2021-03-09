@@ -31,7 +31,13 @@ function mdir() {
 }
 
 function magic_upload() {
-     find $1 -type f -exec curl -X POST -F "filedata=@{}" "https://api.magic.cythereal.com/v1/files?key=$MAGIC_API_KEY" \;  
+     tagparam=""
+     if [[ ! -z "$MAGIC_TAGS" ]] 
+     then
+	 tagparam="-F \"tags=$MAGIC_TAGS\""
+     fi 
+
+     find $1 -type f -exec $DOIT curl -X POST -F "filedata=@{}" $tagparam "https://api.magic.cythereal.com/v1/files?key=$MAGIC_API_KEY" \;  
 }
 
 function upload_ioc() {
